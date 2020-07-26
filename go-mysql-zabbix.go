@@ -40,7 +40,7 @@ var (
     variablesCurMap map[string]string
     statusCurMap    map[string]string
     processCurMap   map[string]string
-    slaveCurMap     map[string]string
+    subordinateCurMap     map[string]string
     binlogCurMap    map[string]string
     engineCurMap    map[string]string
 )
@@ -48,10 +48,10 @@ var (
 const (
     redisSTR        string = "127.0.0.1:6379"
     //statusSQL       string = "SHOW GLOBAL STATUS;"
-    statusSQL       string = "SHOW GLOBAL STATUS WHERE variable_name IN ('Aborted_clients','Aborted_connects','Binlog_cache_disk_use','Binlog_cache_use','Bytes_received','Bytes_sent','Com_delete','Com_delete_multi','Com_insert','Com_insert_select','Com_load','Com_replace','Com_replace_select','Com_select','Com_update','Com_update_multi','Connections','Created_tmp_disk_tables','Created_tmp_files','Created_tmp_tables','Handler_commit','Handler_delete','Handler_read_first','Handler_read_key','Handler_read_next','Handler_read_prev','Handler_read_rnd','Handler_read_rnd_next','Handler_rollback','Handler_savepoint','Handler_savepoint_rollback','Handler_update','Handler_write','Innodb_buffer_pool_reads', 'Innodb_buffer_pool_read_requests','Innodb_DEL','Innodb_QPS','Innodb_TPS','Innodb_rows_inserted','Innodb_rows_updated','Innodb_rows_deleted','Innodb_rows_read','Innodb_row_lock_time','Innodb_row_lock_waits','Key_blocks_not_flushed','Key_blocks_unused','Key_read_requests','Key_reads','Key_write_requests','Key_writes','Max_used_connections','Open_files','Open_tables','Opened_tables','Qcache_free_blocks','Qcache_free_memory','Qcache_hits','Qcache_inserts','Qcache_lowmem_prunes','Qcache_not_cached','Qcache_queries_in_cache','Qcache_total_blocks','Query_time_status','Query_time_binlog','Query_time_process','Query_time_engine','Query_time_slave','Query_time_variables','Query_time_avg','Questions','Rpl_semi_sync_master_clients','Rpl_semi_sync_master_net_avg_wait_time','Rpl_semi_sync_master_net_wait_time','Rpl_semi_sync_master_net_waits','Rpl_semi_sync_master_no_times','Rpl_semi_sync_master_no_tx','Rpl_semi_sync_master_status','Rpl_semi_sync_master_timefunc_failures','Rpl_semi_sync_master_tx_avg_wait_time','Rpl_semi_sync_master_tx_wait_time','Rpl_semi_sync_master_tx_waits','Rpl_semi_sync_master_wait_pos_backtraverse','Rpl_semi_sync_master_wait_sessions','Rpl_semi_sync_master_yes_tx','Select_full_join','Select_full_range_join','Select_range','Select_range_check','Select_scan','Slave_open_temp_tables','Slow_queries','Sort_merge_passes','Sort_range','Sort_rows','Sort_scan','Table_locks_immediate','Table_locks_waited','Threads_cached','Threads_connected','Threads_created','Threads_running','binary_log_space');"
+    statusSQL       string = "SHOW GLOBAL STATUS WHERE variable_name IN ('Aborted_clients','Aborted_connects','Binlog_cache_disk_use','Binlog_cache_use','Bytes_received','Bytes_sent','Com_delete','Com_delete_multi','Com_insert','Com_insert_select','Com_load','Com_replace','Com_replace_select','Com_select','Com_update','Com_update_multi','Connections','Created_tmp_disk_tables','Created_tmp_files','Created_tmp_tables','Handler_commit','Handler_delete','Handler_read_first','Handler_read_key','Handler_read_next','Handler_read_prev','Handler_read_rnd','Handler_read_rnd_next','Handler_rollback','Handler_savepoint','Handler_savepoint_rollback','Handler_update','Handler_write','Innodb_buffer_pool_reads', 'Innodb_buffer_pool_read_requests','Innodb_DEL','Innodb_QPS','Innodb_TPS','Innodb_rows_inserted','Innodb_rows_updated','Innodb_rows_deleted','Innodb_rows_read','Innodb_row_lock_time','Innodb_row_lock_waits','Key_blocks_not_flushed','Key_blocks_unused','Key_read_requests','Key_reads','Key_write_requests','Key_writes','Max_used_connections','Open_files','Open_tables','Opened_tables','Qcache_free_blocks','Qcache_free_memory','Qcache_hits','Qcache_inserts','Qcache_lowmem_prunes','Qcache_not_cached','Qcache_queries_in_cache','Qcache_total_blocks','Query_time_status','Query_time_binlog','Query_time_process','Query_time_engine','Query_time_subordinate','Query_time_variables','Query_time_avg','Questions','Rpl_semi_sync_main_clients','Rpl_semi_sync_main_net_avg_wait_time','Rpl_semi_sync_main_net_wait_time','Rpl_semi_sync_main_net_waits','Rpl_semi_sync_main_no_times','Rpl_semi_sync_main_no_tx','Rpl_semi_sync_main_status','Rpl_semi_sync_main_timefunc_failures','Rpl_semi_sync_main_tx_avg_wait_time','Rpl_semi_sync_main_tx_wait_time','Rpl_semi_sync_main_tx_waits','Rpl_semi_sync_main_wait_pos_backtraverse','Rpl_semi_sync_main_wait_sessions','Rpl_semi_sync_main_yes_tx','Select_full_join','Select_full_range_join','Select_range','Select_range_check','Select_scan','Subordinate_open_temp_tables','Slow_queries','Sort_merge_passes','Sort_range','Sort_rows','Sort_scan','Table_locks_immediate','Table_locks_waited','Threads_cached','Threads_connected','Threads_created','Threads_running','binary_log_space');"
     //variablesSQL    string = "SHOW GLOBAL VARIABLES;"
     variablesSQL    string = "SHOW GLOBAL VARIABLES WHERE variable_name IN ('version_comment', 'version','log_bin', 'innodb_log_buffer_size','key_buffer_size','key_cache_block_size','max_connections','query_cache_size','table_open_cache','thread_cache_size');"
-    slaveSQL        string = "SHOW SLAVE  STATUS;"
+    subordinateSQL        string = "SHOW SLAVE  STATUS;"
     //processSQL      string = "SHOW PROCESSLIST;"
     //processSQL      string = "SELECT id, IF(state IS NULL OR LENGTH(state)=0, 'none', state) FROM INFORMATION_SCHEMA.PROCESSLIST;"
     perconaSQL      string = "SELECT CONCAT(id,'-',if(command='Query', time_ms/1000, 0)) sqlAvg, IF(state IS NULL OR LENGTH(state)=0, 'none', state) sqlType FROM INFORMATION_SCHEMA.PROCESSLIST;"
@@ -295,14 +295,14 @@ func mathData() (string){
                 tmpCurMap := hmgetRedisStrs(curMapName, mo_item_strings)
                 tmpHisMap := hmgetRedisStrs(hisMapName, mo_item_strings)
                 mo_value = floatToStr((strToFloat64(tmpCurMap[1]) - strToFloat64(tmpHisMap[1]))/timeDura)
-            case "Slave-isYes":
-                mo_item_strings = []string{sqlType+"CreateTime", "Slave-IO-Running", "Slave-SQL-Running"}
+            case "Subordinate-isYes":
+                mo_item_strings = []string{sqlType+"CreateTime", "Subordinate-IO-Running", "Subordinate-SQL-Running"}
                 tmpCurMap := hmgetRedisStrs(curMapName, mo_item_strings)
                 if tmpCurMap[1] == "Yes" && tmpCurMap[2] == "Yes" {
                     mo_value = "1"
                 }
             case "semi-sync":
-                mo_item_strings = []string{sqlType+"CreateTime", "Rpl-semi-sync-master-status"}
+                mo_item_strings = []string{sqlType+"CreateTime", "Rpl-semi-sync-main-status"}
                 tmpCurMap := hmgetRedisStrs(curMapName, mo_item_strings)
                 if tmpCurMap[1] == "ON" {
                     mo_value = "100"
@@ -438,14 +438,14 @@ func saveInnodb(tmpText string) map[string]string{
         // newLine
         if line_seg == "+++BTH:" {
 
-            if strings.HasPrefix(newLine, line_seg + "srv_master_thread loops: "){
-                // srv_master_thread loops: 35406745 srv_active, 0 srv_shutdown, 593 srv_idle
-                // srv_master_thread log flush and writes: 35402807
-                results["master_thread_active"]   = strToFloat64(row[2])
-                results["master_thread_shutdown"] = strToFloat64(row[4])
-                results["master_thread_idle"]     = strToFloat64(row[6])
-            } else if strings.HasPrefix(newLine, line_seg + "srv_master_thread log flush and writes: ") {
-                results["master_thread_log_fwrites"]  = strToFloat64(row[5])
+            if strings.HasPrefix(newLine, line_seg + "srv_main_thread loops: "){
+                // srv_main_thread loops: 35406745 srv_active, 0 srv_shutdown, 593 srv_idle
+                // srv_main_thread log flush and writes: 35402807
+                results["main_thread_active"]   = strToFloat64(row[2])
+                results["main_thread_shutdown"] = strToFloat64(row[4])
+                results["main_thread_idle"]     = strToFloat64(row[6])
+            } else if strings.HasPrefix(newLine, line_seg + "srv_main_thread log flush and writes: ") {
+                results["main_thread_log_fwrites"]  = strToFloat64(row[5])
             }
         }
         // ----------cat
@@ -839,16 +839,16 @@ func saveData() (string) {
     //fmt.Println(cur_map)
     hmsetRedis(curMapName, processCurMap)
 
-    //cur_map = addTime("SlaveCreate", cur_map)
-    slaveCTime  := getTime()
-    slaveCurMap = queryMultiColumn("Slave", slaveSQL)
-    if len(slaveCurMap["Slave-SQL-Running"]) > 0 && len(slaveCurMap["Slave-IO-Running"]) > 0 {
-        slaveCurMap["MySQL-Role"] = "0"
+    //cur_map = addTime("SubordinateCreate", cur_map)
+    subordinateCTime  := getTime()
+    subordinateCurMap = queryMultiColumn("Subordinate", subordinateSQL)
+    if len(subordinateCurMap["Subordinate-SQL-Running"]) > 0 && len(subordinateCurMap["Subordinate-IO-Running"]) > 0 {
+        subordinateCurMap["MySQL-Role"] = "0"
     } else {
-        slaveCurMap["MySQL-Role"] = "1"
+        subordinateCurMap["MySQL-Role"] = "1"
     }
-    slaveCurMap = addTime("Slave", slaveCTime, slaveCurMap)
-    hmsetRedis(curMapName, slaveCurMap)
+    subordinateCurMap = addTime("Subordinate", subordinateCTime, subordinateCurMap)
+    hmsetRedis(curMapName, subordinateCurMap)
 
     // #
     // # History Map Save
@@ -897,12 +897,12 @@ func saveData() (string) {
         responseTime["Query-time-engine"] = engineAvgTime
         //fmt.Println(engineAvgTime)
     }
-    if len(slaveCurMap) > 0 {
-        slaveCreateTime := strToTime(slaveCurMap["SlaveCreateTime"])
-        slaveCommitTime := strToTime(slaveCurMap["SlaveCommitTime"])
-        slaveAvgTime    := floatToStr(float64(slaveCommitTime.Sub(slaveCreateTime)/time.Millisecond/1.0))
-        responseTime["Query-time-slave"] = slaveAvgTime
-        //fmt.Println(slaveAvgTime)
+    if len(subordinateCurMap) > 0 {
+        subordinateCreateTime := strToTime(subordinateCurMap["SubordinateCreateTime"])
+        subordinateCommitTime := strToTime(subordinateCurMap["SubordinateCommitTime"])
+        subordinateAvgTime    := floatToStr(float64(subordinateCommitTime.Sub(subordinateCreateTime)/time.Millisecond/1.0))
+        responseTime["Query-time-subordinate"] = subordinateAvgTime
+        //fmt.Println(subordinateAvgTime)
     }
     if len(variablesCurMap) > 0 {
         variablesCreateTime := strToTime(variablesCurMap["VariablesCreateTime"])
@@ -999,41 +999,41 @@ func main() {
         mo_item = "Innodb-buffer-pool-read-requests"
     case "table-cache":
         mo_item = "table-open-cache"
-    case "slave-running":
-        mo_item = "Slave-isYes"
+    case "subordinate-running":
+        mo_item = "Subordinate-isYes"
     case "response-time":
         mo_item = "Query-time-avg"
-    case "slave-lag":
-        mo_item = "Seconds-Behind-Master"
+    case "subordinate-lag":
+        mo_item = "Seconds-Behind-Main"
     case "relay-log-space":
         mo_item = "Relay-Log-Space"
     case "semisync-clients":
-        mo_item = "Rpl-semi-sync-master-clients"
+        mo_item = "Rpl-semi-sync-main-clients"
     case "semisync-net-avg-wait-time":
-        mo_item = "Rpl-semi-sync-master-net-avg-wait-time"
+        mo_item = "Rpl-semi-sync-main-net-avg-wait-time"
     case "semisync-net-wait-time":
-        mo_item = "Rpl-semi-sync-master-net-wait-time"
+        mo_item = "Rpl-semi-sync-main-net-wait-time"
     case "semisync-net-waits":
-        mo_item = "Rpl-semi-sync-master-net-waits"
+        mo_item = "Rpl-semi-sync-main-net-waits"
     case "semisync-no-times":
-        mo_item = "Rpl-semi-sync-master-no-times"
+        mo_item = "Rpl-semi-sync-main-no-times"
     case "semisync-no-tx":
-        mo_item = "Rpl-semi-sync-master-no-tx"
-    //    mo_item = "Rpl-semi-sync-master-status"
+        mo_item = "Rpl-semi-sync-main-no-tx"
+    //    mo_item = "Rpl-semi-sync-main-status"
     case "semisync-timefunc-failures":
-        mo_item = "Rpl-semi-sync-master-timefunc-failures"
+        mo_item = "Rpl-semi-sync-main-timefunc-failures"
     case "semisync-tx-avg-wait-time":
-        mo_item = "Rpl-semi-sync-master-tx-avg-wait-time"
+        mo_item = "Rpl-semi-sync-main-tx-avg-wait-time"
     case "semisync-tx-wait-time":
-        mo_item = "Rpl-semi-sync-master-tx-wait-time"
+        mo_item = "Rpl-semi-sync-main-tx-wait-time"
     case "semisync-tx-waits":
-        mo_item = "Rpl-semi-sync-master-tx-waits"
+        mo_item = "Rpl-semi-sync-main-tx-waits"
     case "semisync-wait-pos-backtraverse":
-        mo_item = "Rpl-semi-sync-master-wait-pos-backtraverse"
+        mo_item = "Rpl-semi-sync-main-wait-pos-backtraverse"
     case "semisync-wait-sessions":
-        mo_item = "Rpl-semi-sync-master-wait-sessions"
+        mo_item = "Rpl-semi-sync-main-wait-sessions"
     case "semisync-yes-tx":
-        mo_item = "Rpl-semi-sync-master-yes-tx"
+        mo_item = "Rpl-semi-sync-main-yes-tx"
     }
     if _, ok := MySQLMonitor[mo_item]; ok {
         sqlType  = strings.Split(MySQLMonitor[mo_item], "_")[0]
@@ -1063,14 +1063,14 @@ func MySQLItemInit(){
         "Query-time-binlog"                                  : "Status_0",
         "Query-time-process"                                 : "Status_0",
         "Query-time-engine"                                  : "Status_0",
-        "Query-time-slave"                                   : "Status_0",
+        "Query-time-subordinate"                                   : "Status_0",
         "Query-time-variables"                               : "Status_0",
         "Query-time-avg"                                     : "Status_0",
         "pool-reads"                                         : "Status_0",
         "pool-read-requests"                                 : "Status_0",
         "table-cache"                                        : "Status_0",
-        "slave-running"                                      : "Status_0",
-        //"slave-stopped"                                      : "Status_0",
+        "subordinate-running"                                      : "Status_0",
+        //"subordinate-stopped"                                      : "Status_0",
         // saveData
         "SaveData"                                           : "saveData_0",
         "semisync-clients"                                   : "Status_0",
@@ -1096,20 +1096,20 @@ func MySQLItemInit(){
         "Innodb-TPS"                                         : "Status_2",
         "Innodb-QPS"                                         : "Status_2",
         "Innodb-DEL"                                         : "Status_2",
-        "Slave-isYes"                                        : "Status_2",
+        "Subordinate-isYes"                                        : "Status_2",
         "semi-sync"                                          : "Status_2",
-        "slave-lag"                                          : "Status_2",
+        "subordinate-lag"                                          : "Status_2",
         "response-time"                                      : "Status_2",
         "relay-log-space"                                    : "Status_2",
         // binlogSQL
         "binary-log-space"                                   : "Status_0",
-        // slaveSQL
-        "MySQL-Role"                                         : "Slave_0",
-        "Relay-Log-Space"                                    : "Slave_0",
-        "Slave-SQL-Running"                                  : "Slave_0",
-        "Slave-IO-Running"                                   : "Slave_0",
-        "Seconds-Behind-Master"                              : "Slave_0",
-        "Rpl-semi-sync-master-status"                        : "Slave_0",
+        // subordinateSQL
+        "MySQL-Role"                                         : "Subordinate_0",
+        "Relay-Log-Space"                                    : "Subordinate_0",
+        "Subordinate-SQL-Running"                                  : "Subordinate_0",
+        "Subordinate-IO-Running"                                   : "Subordinate_0",
+        "Seconds-Behind-Main"                              : "Subordinate_0",
+        "Rpl-semi-sync-main-status"                        : "Subordinate_0",
         // statusSQL   string = "SHOW GLOBAL STATUS;"
         "Aborted-clients"                                    : "Status_0",
         "Aborted-connects"                                   : "Status_0",
@@ -1136,7 +1136,7 @@ func MySQLItemInit(){
         "Com-binlog"                                         : "Status_0",
         "Com-call-procedure"                                 : "Status_0",
         "Com-change-db"                                      : "Status_0",
-        "Com-change-master"                                  : "Status_0",
+        "Com-change-main"                                  : "Status_0",
         "Com-change-repl-filter"                             : "Status_0",
         "Com-check"                                          : "Status_0",
         "Com-checksum"                                       : "Status_0",
@@ -1224,7 +1224,7 @@ func MySQLItemInit(){
         "Com-show-function-status"                           : "Status_0",
         "Com-show-grants"                                    : "Status_0",
         "Com-show-keys"                                      : "Status_0",
-        "Com-show-master-status"                             : "Status_0",
+        "Com-show-main-status"                             : "Status_0",
         "Com-show-open-tables"                               : "Status_0",
         "Com-show-plugins"                                   : "Status_0",
         "Com-show-privileges"                                : "Status_0",
@@ -1234,8 +1234,8 @@ func MySQLItemInit(){
         "Com-show-profile"                                   : "Status_0",
         "Com-show-profiles"                                  : "Status_0",
         "Com-show-relaylog-events"                           : "Status_0",
-        "Com-show-slave-hosts"                               : "Status_0",
-        "Com-show-slave-status"                              : "Status_0",
+        "Com-show-subordinate-hosts"                               : "Status_0",
+        "Com-show-subordinate-status"                              : "Status_0",
         "Com-show-status"                                    : "Status_0",
         "Com-show-storage-engines"                           : "Status_0",
         "Com-show-table-status"                              : "Status_0",
@@ -1245,8 +1245,8 @@ func MySQLItemInit(){
         "Com-show-warnings"                                  : "Status_0",
         "Com-show-create-user"                               : "Status_0",
         "Com-shutdown"                                       : "Status_0",
-        "Com-slave-start"                                    : "Status_0",
-        "Com-slave-stop"                                     : "Status_0",
+        "Com-subordinate-start"                                    : "Status_0",
+        "Com-subordinate-stop"                                     : "Status_0",
         "Com-group-replication-start"                        : "Status_0",
         "Com-group-replication-stop"                         : "Status_0",
         "Com-stmt-execute"                                   : "Status_0",
@@ -1413,27 +1413,27 @@ func MySQLItemInit(){
         "Qcache-total-blocks"                                : "Status_0",
         "Queries"                                            : "Status_0",
         "Questions"                                          : "Status_0",
-        "Rpl-semi-sync-master-clients"                       : "Status_0",
-        "Rpl-semi-sync-master-net-avg-wait-time"             : "Status_0",
-        "Rpl-semi-sync-master-net-wait-time"                 : "Status_0",
-        "Rpl-semi-sync-master-net-waits"                     : "Status_0",
-        "Rpl-semi-sync-master-no-times"                      : "Status_0",
-        "Rpl-semi-sync-master-no-tx"                         : "Status_0",
-//        "Rpl-semi-sync-master-status"                        : "Status_0",
-        "Rpl-semi-sync-master-timefunc-failures"             : "Status_0",
-        "Rpl-semi-sync-master-tx-avg-wait-time"              : "Status_0",
-        "Rpl-semi-sync-master-tx-wait-time"                  : "Status_0",
-        "Rpl-semi-sync-master-tx-waits"                      : "Status_0",
-        "Rpl-semi-sync-master-wait-pos-backtraverse"         : "Status_0",
-        "Rpl-semi-sync-master-wait-sessions"                 : "Status_0",
-        "Rpl-semi-sync-master-yes-tx"                        : "Status_0",
+        "Rpl-semi-sync-main-clients"                       : "Status_0",
+        "Rpl-semi-sync-main-net-avg-wait-time"             : "Status_0",
+        "Rpl-semi-sync-main-net-wait-time"                 : "Status_0",
+        "Rpl-semi-sync-main-net-waits"                     : "Status_0",
+        "Rpl-semi-sync-main-no-times"                      : "Status_0",
+        "Rpl-semi-sync-main-no-tx"                         : "Status_0",
+//        "Rpl-semi-sync-main-status"                        : "Status_0",
+        "Rpl-semi-sync-main-timefunc-failures"             : "Status_0",
+        "Rpl-semi-sync-main-tx-avg-wait-time"              : "Status_0",
+        "Rpl-semi-sync-main-tx-wait-time"                  : "Status_0",
+        "Rpl-semi-sync-main-tx-waits"                      : "Status_0",
+        "Rpl-semi-sync-main-wait-pos-backtraverse"         : "Status_0",
+        "Rpl-semi-sync-main-wait-sessions"                 : "Status_0",
+        "Rpl-semi-sync-main-yes-tx"                        : "Status_0",
         "Select-full-join"                                   : "Status_0",
         "Select-full-range-join"                             : "Status_0",
         "Select-range"                                       : "Status_0",
         "Select-range-check"                                 : "Status_0",
         "Select-scan"                                        : "Status_0",
-        "Slave-open-temp-tables"                             : "Status_0",
-        "Slave-retried-transactions"                         : "Status_0",
+        "Subordinate-open-temp-tables"                             : "Status_0",
+        "Subordinate-retried-transactions"                         : "Status_0",
         "Slow-launch-threads"                                : "Status_0",
         "Slow-queries"                                       : "Status_0",
         "Sort-merge-passes"                                  : "Status_0",
@@ -1676,7 +1676,7 @@ func MySQLItemInit(){
         "ignore-db-dirs"                                                 : "Variables_0",
         "init-connect"                                                   : "Variables_0",
         "init-file"                                                      : "Variables_0",
-        "init-slave"                                                     : "Variables_0",
+        "init-subordinate"                                                     : "Variables_0",
         "innodb-adaptive-flushing"                                       : "Variables_0",
         "innodb-adaptive-flushing-lwm"                                   : "Variables_0",
         "innodb-adaptive-hash-index"                                     : "Variables_0",
@@ -1873,12 +1873,12 @@ func MySQLItemInit(){
         "log-error-verbosity"                                            : "Variables_0",
         "log-output"                                                     : "Variables_0",
         "log-queries-not-using-indexes"                                  : "Variables_0",
-        "log-slave-updates"                                              : "Variables_0",
+        "log-subordinate-updates"                                              : "Variables_0",
         "log-slow-admin-statements"                                      : "Variables_0",
         "log-slow-filter"                                                : "Variables_0",
         "log-slow-rate-limit"                                            : "Variables_0",
         "log-slow-rate-type"                                             : "Variables_0",
-        "log-slow-slave-statements"                                      : "Variables_0",
+        "log-slow-subordinate-statements"                                      : "Variables_0",
         "log-slow-sp-statements"                                         : "Variables_0",
         "log-slow-verbosity"                                             : "Variables_0",
         "log-statements-unsafe-for-binlog"                               : "Variables_0",
@@ -1893,8 +1893,8 @@ func MySQLItemInit(){
         "lower-case-file-system"                                         : "Variables_0",
         "lower-case-table-names"                                         : "Variables_0",
         "low-priority-updates"                                           : "Variables_0",
-        "master-info-repository"                                         : "Variables_0",
-        "master-verify-checksum"                                         : "Variables_0",
+        "main-info-repository"                                         : "Variables_0",
+        "main-verify-checksum"                                         : "Variables_0",
         "max-allowed-packet"                                             : "Variables_0",
         "max-binlog-cache-size"                                          : "Variables_0",
         "max-binlog-files"                                               : "Variables_0",
@@ -2031,15 +2031,15 @@ func MySQLItemInit(){
         "report-port"                                                    : "Variables_0",
         "report-user"                                                    : "Variables_0",
         "require-secure-transport"                                       : "Variables_0",
-        "rpl-semi-sync-master-enabled"                                   : "Variables_0",
-        "rpl-semi-sync-master-timeout"                                   : "Variables_0",
-        "rpl-semi-sync-master-trace-level"                               : "Variables_0",
-        "rpl-semi-sync-master-wait-for-slave-count"                      : "Variables_0",
-        "rpl-semi-sync-master-wait-no-slave"                             : "Variables_0",
-        "rpl-semi-sync-master-wait-point"                                : "Variables_0",
-        "rpl-semi-sync-slave-enabled"                                    : "Variables_0",
-        "rpl-semi-sync-slave-trace-level"                                : "Variables_0",
-        "rpl-stop-slave-timeout"                                         : "Variables_0",
+        "rpl-semi-sync-main-enabled"                                   : "Variables_0",
+        "rpl-semi-sync-main-timeout"                                   : "Variables_0",
+        "rpl-semi-sync-main-trace-level"                               : "Variables_0",
+        "rpl-semi-sync-main-wait-for-subordinate-count"                      : "Variables_0",
+        "rpl-semi-sync-main-wait-no-subordinate"                             : "Variables_0",
+        "rpl-semi-sync-main-wait-point"                                : "Variables_0",
+        "rpl-semi-sync-subordinate-enabled"                                    : "Variables_0",
+        "rpl-semi-sync-subordinate-trace-level"                                : "Variables_0",
+        "rpl-stop-subordinate-timeout"                                         : "Variables_0",
         "secure-auth"                                                    : "Variables_0",
         "secure-file-priv"                                               : "Variables_0",
         "server-id"                                                      : "Variables_0",
@@ -2061,23 +2061,23 @@ func MySQLItemInit(){
         "skip-name-resolve"                                              : "Variables_0",
         "skip-networking"                                                : "Variables_0",
         "skip-show-database"                                             : "Variables_0",
-        "slave-allow-batching"                                           : "Variables_0",
-        "slave-checkpoint-group"                                         : "Variables_0",
-        "slave-checkpoint-period"                                        : "Variables_0",
-        "slave-compressed-protocol"                                      : "Variables_0",
-        "slave-exec-mode"                                                : "Variables_0",
-        "slave-load-tmpdir"                                              : "Variables_0",
-        "slave-max-allowed-packet"                                       : "Variables_0",
-        "slave-net-timeout"                                              : "Variables_0",
-        "slave-parallel-type"                                            : "Variables_0",
-        "slave-parallel-workers"                                         : "Variables_0",
-        "slave-pending-jobs-size-max"                                    : "Variables_0",
-        "slave-preserve-commit-order"                                    : "Variables_0",
-        "slave-rows-search-algorithms"                                   : "Variables_0",
-        "slave-skip-errors"                                              : "Variables_0",
-        "slave-sql-verify-checksum"                                      : "Variables_0",
-        "slave-transaction-retries"                                      : "Variables_0",
-        "slave-type-conversions"                                         : "Variables_0",
+        "subordinate-allow-batching"                                           : "Variables_0",
+        "subordinate-checkpoint-group"                                         : "Variables_0",
+        "subordinate-checkpoint-period"                                        : "Variables_0",
+        "subordinate-compressed-protocol"                                      : "Variables_0",
+        "subordinate-exec-mode"                                                : "Variables_0",
+        "subordinate-load-tmpdir"                                              : "Variables_0",
+        "subordinate-max-allowed-packet"                                       : "Variables_0",
+        "subordinate-net-timeout"                                              : "Variables_0",
+        "subordinate-parallel-type"                                            : "Variables_0",
+        "subordinate-parallel-workers"                                         : "Variables_0",
+        "subordinate-pending-jobs-size-max"                                    : "Variables_0",
+        "subordinate-preserve-commit-order"                                    : "Variables_0",
+        "subordinate-rows-search-algorithms"                                   : "Variables_0",
+        "subordinate-skip-errors"                                              : "Variables_0",
+        "subordinate-sql-verify-checksum"                                      : "Variables_0",
+        "subordinate-transaction-retries"                                      : "Variables_0",
+        "subordinate-type-conversions"                                         : "Variables_0",
         "slow-launch-time"                                               : "Variables_0",
         "slow-query-log"                                                 : "Variables_0",
         "slow-query-log-always-write-time"                               : "Variables_0",
@@ -2095,7 +2095,7 @@ func MySQLItemInit(){
         "sql-quote-show-create"                                          : "Variables_0",
         "sql-safe-updates"                                               : "Variables_0",
         "sql-select-limit"                                               : "Variables_0",
-        "sql-slave-skip-counter"                                         : "Variables_0",
+        "sql-subordinate-skip-counter"                                         : "Variables_0",
         "sql-warnings"                                                   : "Variables_0",
         "ssl-ca"                                                         : "Variables_0",
         "ssl-capath"                                                     : "Variables_0",
@@ -2108,7 +2108,7 @@ func MySQLItemInit(){
         "super-read-only"                                                : "Variables_0",
         "sync-binlog"                                                    : "Variables_0",
         "sync-frm"                                                       : "Variables_0",
-        "sync-master-info"                                               : "Variables_0",
+        "sync-main-info"                                               : "Variables_0",
         "sync-relay-log"                                                 : "Variables_0",
         "sync-relay-log-info"                                            : "Variables_0",
         "system-time-zone"                                               : "Variables_0",
